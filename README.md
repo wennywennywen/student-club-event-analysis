@@ -1,6 +1,6 @@
 # Student Club Event Registration Analysis
 
-An analysis of annual student club event registration data to identify promotion effectiveness and inform future event strategy.
+An analysis of my annual student club event registration data to identify promotion effectiveness and inform future event strategy.
 
 ## Key Findings
 - Registration peaked in late April, driven almost entirely by a spike in staff introductions — suggesting a concentrated but unsustainable promotional push
