@@ -5,15 +5,14 @@ import sqlite3
 # SECTION 1: DATA LOADING & CLEANING
 # ============================================
 def load_data():
-    df = pd.read_csv('event_registration_2025.csv')
-    df = df.drop(columns=['注文ID', 'チケットNo.', 'Unnamed: 11', 'Unnamed: 12'])
+    df = pd.read_csv('../data/event_registration_2025.csv')
+    df = df.drop(columns=['注文ID', 'チケットNo.', 'Unnamed: 11', 'Unnamed: 12','フリーフォーム1 所属(学校名または会社名)\n \n ※所属が無い方は「無し」とご記入ください。'])
     df = df.rename(columns={
         '注文時刻': 'registered_at',
         '注文内容': 'ticket_type',
         'イベントID': 'event_id',
         'イベントタイトル': 'event_title',
         '年代': 'age_group',
-        'フリーフォーム1 所属(学校名または会社名)\n \n ※所属が無い方は「無し」とご記入ください。': 'affiliation',
         'オプション1 イベントを知ったきっかけ': 'acquisition_channel',
         'オプション2 Club 2025に期待することをご選択ください。': 'expectations',
         'オプション3 属性(最も当てはまるもの一つを選択してください)': 'attribute'

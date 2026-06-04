@@ -6,38 +6,36 @@ import matplotlib.pyplot as plt
 # ============================================
 
 def load_data():
-    df = pd.read_csv('event_registration_2025.csv')
-    df = df.drop(columns=['注文ID', 'チケットNo.', 'Unnamed: 11', 'Unnamed: 12'])
+    df = pd.read_csv('../data/event_registration_2025.csv')
+    col = df.columns
     df = df.rename(columns={
-        '注文時刻': 'registered_at',
-        '注文内容': 'ticket_type',
-        'イベントID': 'event_id',
-        'イベントタイトル': 'event_title',
-        '年代': 'age_group',
-        'フリーフォーム1 所属(学校名または会社名)\n \n ※所属が無い方は「無し」とご記入ください。': 'affiliation',
-        'オプション1 イベントを知ったきっかけ': 'acquisition_channel',
-        'オプション2 Club 2025に期待することをご選択ください。': 'expectations',
-        'オプション3 属性(最も当てはまるもの一つを選択してください)': 'attribute'
+        col[1]: 'registered_at',
+        col[2]: 'ticket_type',
+        col[4]: 'event_title',
+        col[6]: 'age_group',
+        col[8]: 'acquisition_channel',
+        col[9]: 'expectations',
+        col[10]: 'attribute'
     })
     df['registered_at'] = pd.to_datetime(df['registered_at']).dt.tz_localize(None)
     return df
 
 def load_data2():
-    df_2026 = pd.read_csv('event_registration_2026.csv')
+    df_2026 = pd.read_csv('../data/event_registration_2026.csv')
+    col = df_2026.columns
     df_2026 = df_2026.rename(columns={
-        '注文時刻': 'registered_at',
-        '注文内容': 'ticket_type',
-        '年代': 'age_group',
-        'お住まいの地域': 'residence',
-        '所属(学校名または会社名)\n ※所属が無い方は「無し」とご記入ください。': 'affiliation',
-        '属性（最も当てはまるものを一つ選択してください）': 'attribute',
-        'イベントを知ったきっかけ': 'acquisition_channel',
-        'Club 2026に期待することをご選択ください。': 'expectations'
+        col[1]: 'registered_at',
+        col[2]: 'ticket_type',
+        col[10]: 'age_group',
+        col[13]: 'residence',
+        col[15]: 'attribute',
+        col[16]: 'acquisition_channel',
+        col[17]: 'expectations'
     })
     df_2026['registered_at'] = pd.to_datetime(df_2026['registered_at'], utc=True).dt.tz_convert('Asia/Tokyo').dt.tz_localize(None)
     return df_2026
 
-keep = ['registered_at', 'ticket_type', 'age_group', 'affiliation',
+keep = ['registered_at', 'ticket_type', 'age_group',
         'acquisition_channel', 'expectations', 'attribute', 'year']
 
 df_2025 = load_data()
@@ -64,7 +62,7 @@ ax.set_ylabel('Cumulative Registrations')
 ax.set_title('Club Registration Growth: 2025 vs 2026')
 ax.legend(['2025', '2026'])
 plt.tight_layout()
-plt.savefig('registration_growth.png')
+plt.savefig('../outputs/registration_growth.png')
 plt.close()
 
 # ============================================
@@ -72,6 +70,7 @@ plt.close()
 # ============================================
 
 rename_map_channel = {
+    # 2025 names
     'Club Instagram': 'INSTAGRAM',
     'Club Facebook': 'FACEBOOK',
     'Club ホームページ': 'HOMEPAGE',
@@ -79,6 +78,13 @@ rename_map_channel = {
     'Club以外のSNS': 'OTHER SNS',
     'Club以外の各種SNS媒体': 'OTHER SNS',
     'Club X': 'X',
+    # 2026 names
+    'TEDxNagoyaU Instagram': 'INSTAGRAM',
+    'TEDxNagoyaU Facebook': 'FACEBOOK',
+    'TEDxNagoyaU ホームページ・メール': 'HOMEPAGE',
+    'TEDxNagoyaU以外の各種SNS媒体': 'OTHER SNS',
+    'TEDxNagoyaU X': 'X',
+    # Common
     'スタッフからの紹介': 'INTRODUCED BY STAFF',
     'その他': 'OTHERS',
     '所属校・会社からの紹介': 'INTRODUCED BY INSTITUTION',
@@ -99,7 +105,7 @@ ax.set_ylabel('Number of Registrations')
 ax.set_title('Club Acquisition Channel: 2025 vs 2026')
 plt.xticks(rotation=45, ha='right')
 plt.tight_layout()
-plt.savefig('acquisition_comparison.png')
+plt.savefig('../outputs/acquisition_comparison.png')
 plt.close()
 
 # ============================================
@@ -127,7 +133,7 @@ ax.set_ylabel('Number of Registrations')
 ax.set_title('Club Attendee Type: 2025 vs 2026')
 plt.xticks(rotation=45, ha='right')
 plt.tight_layout()
-plt.savefig('attribute_comparison.png')
+plt.savefig('../outputs/attribute_comparison.png')
 plt.close()
 
 # ============================================
@@ -143,27 +149,26 @@ for i, channel in enumerate(channels_to_plot):
     df_ch = df_combined[df_combined['acquisition_channel'] == channel].copy()
     df_ch['days_since_open'] = (df_ch['registered_at'] - df_ch.groupby('year')['registered_at'].transform('min')).dt.days
     cumul = df_ch.groupby(['days_since_open', 'year']).size().unstack().fillna(0).cumsum()
-    cumul.plot(ax=axes[i], title=channel)
+    cumul_pct = cumul.div(cumul.max()) * 100
+    cumul_pct.plot(ax=axes[i], title=channel)
     axes[i].set_xlabel('Days Since Registration Opened')
-    axes[i].set_ylabel('Cumulative Registrations')
+    axes[i].set_ylabel('% of Total Registrations')
+    axes[i].set_ylim(0, 105)
 
 plt.suptitle('Club Acquisition Channel Growth: 2025 vs 2026', fontsize=14)
 plt.tight_layout()
-plt.savefig('channel_growth.png')
+plt.savefig('../outputs/channel_growth.png')
 plt.close()
 
 # ============================================
 # SECTION 6: CHANNEL PERFORMANCE VS LAST YEAR
 # ============================================
 
-day_cutoff = 47
-
 for channel in channels_to_plot:
-    df_ch = df_combined.copy()
-    df_ch['days_since_open'] = (df_ch['registered_at'] - df_ch.groupby('year')['registered_at'].transform('min')).dt.days
+    df_ch = df_combined[df_combined['acquisition_channel'] == channel]
 
-    count_2025 = df_ch[(df_ch['year'] == 2025) & (df_ch['days_since_open'] <= day_cutoff)].shape[0]
-    count_2026 = df_ch[(df_ch['year'] == 2026) & (df_ch['days_since_open'] <= day_cutoff)].shape[0]
+    count_2025 = df_ch[df_ch['year'] == 2025].shape[0]
+    count_2026 = df_ch[df_ch['year'] == 2026].shape[0]
 
     if count_2025 > 0:
         pct_change = round((count_2026 - count_2025) / count_2025 * 100, 1)

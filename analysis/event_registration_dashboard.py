@@ -7,20 +7,18 @@ import sqlite3
 # SECTION 1: DATA LOADING & CLEANING
 # ============================================
 def load_data():
-    df = pd.read_csv('event_registration_2025.csv')
-    df = df.drop(columns=['注文ID', 'チケットNo.', 'Unnamed: 11', 'Unnamed: 12'])
+    df = pd.read_csv('../data/event_registration_2025.csv')
     df = df.rename(columns={
         '注文時刻': 'registered_at',
         '注文内容': 'ticket_type',
-        'イベントID': 'event_id',
         'イベントタイトル': 'event_title',
         '年代': 'age_group',
-        'フリーフォーム1 所属(学校名または会社名)\n \n ※所属が無い方は「無し」とご記入ください。': 'affiliation',
         'オプション1 イベントを知ったきっかけ': 'acquisition_channel',
         'オプション2 Club 2025に期待することをご選択ください。': 'expectations',
         'オプション3 属性(最も当てはまるもの一つを選択してください)': 'attribute'
     })
     return df
+
 
 # ============================================
 # SECTION 2: PIPELINE — LOAD INTO SQLITE
@@ -59,7 +57,7 @@ df_time = load_data()
 df_time['registered_at'] = pd.to_datetime(df_time['registered_at'], utc=True)
 df_time['registered_at'] = df_time['registered_at'].dt.tz_localize(None)
 df_time['day'] = df_time['registered_at'].dt.to_period('D').astype(str)
-trend = df_time.groupby('day')['event_id'].count().reset_index()
+trend = df_time.groupby('day')['event_title'].count().reset_index()
 trend.columns = ['day', 'registrations']
 
 fig, ax = plt.subplots(figsize=(12, 6))
@@ -88,7 +86,7 @@ rename_map = {
 }
 
 acquisition = pd.read_sql("""
-    SELECT acquisition_channel, COUNT(event_id) as count
+    SELECT acquisition_channel, COUNT(event_title) as count
     FROM event_acquisition
     WHERE acquisition_channel IS NOT NULL
     GROUP BY acquisition_channel
@@ -116,7 +114,7 @@ rename_map = {
 }
 
 attribute = pd.read_sql("""
-    SELECT attribute, COUNT(event_id) as count
+    SELECT attribute, COUNT(event_title) as count
     FROM event_attribute
     WHERE attribute IS NOT NULL
     GROUP BY attribute
@@ -152,7 +150,7 @@ rename_map = {
 st.header('Channel Effectiveness by Audience Type')
 
 df_acq_att = df_acq[~df_acq['attribute'].str.contains(',', na=False)]
-att_channel = df_acq_att.groupby(['acquisition_channel', 'attribute'])['event_id'].count().reset_index()
+att_channel = df_acq_att.groupby(['acquisition_channel', 'attribute'])['event_title'].count().reset_index()
 
 att_channel['acquisition_channel'] = att_channel['acquisition_channel'].map(rename_map).fillna(att_channel['acquisition_channel'])
 att_channel['attribute'] = att_channel['attribute'].map({
@@ -162,8 +160,8 @@ att_channel['attribute'] = att_channel['attribute'].map({
     '中学生以下': 'MIDDLE SCHOOL AND BELOW'
 })
 
-att_channel_top = att_channel.sort_values(by='event_id', ascending=False).head(20)
-st.dataframe(att_channel_top[['acquisition_channel', 'attribute', 'event_id']].rename(columns={'event_id': 'count'}))
+att_channel_top = att_channel.sort_values(by='event_title', ascending=False).head(20)
+st.dataframe(att_channel_top[['acquisition_channel', 'attribute', 'event_title']].rename(columns={'event_title': 'count'}))
 
 # ============================================
 # CHART 5: ATTRIBUTE CHANNEL EFFECTIVENESS OVER TIME
@@ -185,7 +183,7 @@ df_time_acq = df_time.copy()
 df_time_acq['acquisition_channel'] = df_time_acq['acquisition_channel'].str.split(r',|，')
 df_time_acq = df_time_acq.explode('acquisition_channel')
 df_time_acq['acquisition_channel'] = df_time_acq['acquisition_channel'].str.replace(' ', '', regex=False)
-time_acq = df_time_acq.groupby(['day','acquisition_channel'])['event_id'].count().unstack().fillna(0)
+time_acq = df_time_acq.groupby(['day','acquisition_channel'])['event_title'].count().unstack().fillna(0)
 time_acq.columns = ['FACEBOOK', 'INSTAGRAM', 'X', 'WEBSITE', 'OTHER SNS','OTHERS','INTRODUCED BY STAFF', 'INTRODUCED BY OWN INSTITUTION', 'INTRODUCED BY SPEAKERS AND EXHIBITORS','TRAIN STATION AD']
 keep_channels = ['INTRODUCED BY STAFF', 'INTRODUCED BY OWN INSTITUTION', 'INTRODUCED BY SPEAKERS AND EXHIBITORS']
 time_acq_filtered = time_acq[keep_channels]

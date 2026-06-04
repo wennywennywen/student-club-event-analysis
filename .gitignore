@@ -1,4 +1,9 @@
+# Mac
 .DS_Store
-day*.py
-dec*.py
-denso.py
+
+# Python
+__pycache__/
+*.pyc
+
+# Private registration data
+data/
